@@ -18,23 +18,55 @@ fn reset(runtime: *Runtime) void {
     runtime.stack_ptr = 0;
 }
 
-pub fn fromFile(file_name: []const u8, allocator: Allocator) !Runtime {
+pub fn repl(allocator: Allocator) !void {
+    var buf: [128]u8 = undefined;
+    var runtime = try Runtime.init(allocator, 256, &buf);
+    defer runtime.deinit();
+
+    const stdin = std.io.getStdIn().reader();
+
+    loop: while (true) {
+        std.debug.print("> ", .{});
+        const working_buf = blk: {
+            const maybe_null_buf = try stdin.readUntilDelimiterOrEof(&buf, '\n');
+            if (maybe_null_buf) |working_buf| {
+                if (std.mem.eql(u8, "exit", working_buf)) {
+                    break :loop;
+                }
+                break :blk working_buf;
+            } else {
+                continue;
+            }
+        };
+        runtime.setBuffer(working_buf);
+        runtime.nextToken();
+
+        try runtime.run();
+    }
+}
+
+fn setBuffer(runtime: *Runtime, buffer: []const u8) void {
+    runtime.lexer.setBuffer(buffer);
+}
+
+pub fn fromFile(file_name: []const u8, allocator: Allocator) !void {
     const file = try std.fs.cwd().openFile(file_name, .{});
     defer file.close();
 
     const contents = try file.readToEndAlloc(allocator, std.math.maxInt(usize));
-    var lexer = Lexer.init(contents, allocator);
-    errdefer lexer.deinit();
+    defer allocator.free(contents);
 
-    return try Runtime.init(allocator, 256, lexer);
+    var runtime = try Runtime.init(allocator, 256, contents);
+    defer runtime.deinit();
+    try runtime.run();
 }
 
-pub fn init(allocator: Allocator, stack_size: u32, lexer: Lexer) !Runtime {
+pub fn init(allocator: Allocator, stack_size: u32, buffer: []const u8) !Runtime {
     var runtime: Runtime = .{
         .allocator = allocator,
         .stack = try allocator.alloc(Value, stack_size),
         .stack_ptr = 0,
-        .lexer = lexer,
+        .lexer = Lexer.init(buffer),
         .current_token = undefined,
     };
     runtime.nextToken();
@@ -111,7 +143,6 @@ inline fn print(runtime: *Runtime) !void {
 
 pub fn deinit(runtime: *Runtime) void {
     runtime.allocator.free(runtime.stack);
-    runtime.lexer.deinit();
 }
 
 pub fn push(runtime: *Runtime, value: Value) !u32 {

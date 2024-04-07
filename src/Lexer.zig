@@ -20,16 +20,20 @@ const Operation = struct {
     }
 };
 
-allocator: std.mem.Allocator,
-buffer: []u8,
+buffer: []const u8,
 index: u32,
 start: struct {
     index: u32 = 0,
 },
 
-pub fn init(buffer: []u8, allocator: std.mem.Allocator) Lexer {
+pub fn setBuffer(lexer: *Lexer, buffer: []const u8) void {
+    lexer.buffer = buffer;
+    lexer.index = 0;
+    lexer.start = .{};
+}
+
+pub fn init(buffer: []const u8) Lexer {
     return .{
-        .allocator = allocator,
         .buffer = buffer,
         .index = 0,
         .start = .{},
@@ -146,12 +150,4 @@ inline fn createToken(lexer: Lexer, ty: Token.Type) Token {
         },
         .type = ty,
     };
-}
-
-pub inline fn freeBuffer(lexer: *Lexer) void {
-    lexer.allocator.free(lexer.buffer);
-}
-
-pub fn deinit(lexer: *Lexer) void {
-    lexer.freeBuffer();
 }

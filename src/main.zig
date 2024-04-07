@@ -19,10 +19,8 @@ pub fn main() !void {
     defer opts.deinit();
 
     if (opts.options.file) |file| {
-        var runtime = try Runtime.fromFile(file, allocator);
-        defer runtime.deinit();
-        try runtime.run();
+        try Runtime.fromFile(file, allocator);
     } else {
-        // repl
+        try Runtime.repl(allocator);
     }
 }
