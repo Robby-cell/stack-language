@@ -155,7 +155,7 @@ pub fn push(runtime: *Runtime, value: Value) !u32 {
 }
 
 pub fn peek(runtime: Runtime, index: u32) !Value {
-    if (index > runtime.stack_ptr) {
+    if (index + 1 > runtime.stack_ptr) {
         return error.InvalidMemoryAccess;
     }
     return runtime.stack[runtime.stack_ptr - (index + 1)];
