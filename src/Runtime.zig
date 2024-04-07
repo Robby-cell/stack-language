@@ -14,12 +14,27 @@ stack_ptr: u32,
 lexer: Lexer,
 current_token: Token,
 
-pub fn init(allocator: Allocator, stack_size: u32, buffer: []const u8) !Runtime {
+fn reset(runtime: *Runtime) void {
+    runtime.stack_ptr = 0;
+}
+
+pub fn fromFile(file_name: []const u8, allocator: Allocator) !Runtime {
+    const file = try std.fs.cwd().openFile(file_name, .{});
+    defer file.close();
+
+    const contents = try file.readToEndAlloc(allocator, std.math.maxInt(usize));
+    var lexer = Lexer.init(contents, allocator);
+    errdefer lexer.deinit();
+
+    return try Runtime.init(allocator, 256, lexer);
+}
+
+pub fn init(allocator: Allocator, stack_size: u32, lexer: Lexer) !Runtime {
     var runtime: Runtime = .{
         .allocator = allocator,
         .stack = try allocator.alloc(Value, stack_size),
         .stack_ptr = 0,
-        .lexer = Lexer.init(buffer),
+        .lexer = lexer,
         .current_token = undefined,
     };
     runtime.nextToken();
@@ -96,6 +111,7 @@ inline fn print(runtime: *Runtime) !void {
 
 pub fn deinit(runtime: *Runtime) void {
     runtime.allocator.free(runtime.stack);
+    runtime.lexer.deinit();
 }
 
 pub fn push(runtime: *Runtime, value: Value) !u32 {

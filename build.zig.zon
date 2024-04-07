@@ -3,6 +3,10 @@
     .version = "0.0.0",
 
     .dependencies = .{
+        .zargs = .{
+            .url = "https://github.com/Robby-cell/zargs/archive/refs/tags/v0.0.1.tar.gz",
+            .hash = "1220541ec044358e851c16308f31b492de114fa175ad3cb7db7604bb19c9eca4e484",
+        },
     },
 
     .paths = .{

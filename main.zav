@@ -1,0 +1,2 @@
+push 22.2 print push 33.221 add
+print push 33 push pop print pop print

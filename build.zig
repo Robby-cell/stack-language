@@ -11,6 +11,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const zargs_dep = b.dependency("zargs", .{});
+    exe.root_module.addImport("zargs", zargs_dep.module("zargs"));
+
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
